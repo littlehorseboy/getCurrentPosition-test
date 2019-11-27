@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>getCurrentPosition</title>
+</head>
+
+<body>
+  <textarea id="textareaEl" readonly cols="50" rows="20"></textarea>
+  <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+  <script>
+    const textareaEl = document.querySelector('#textareaEl');
+
+    function cloneAsObject(obj) {
+      if (obj === null || !(obj instanceof Object)) {
+        return obj;
+      }
+      var temp = (obj instanceof Array) ? [] : {};
+      // ReSharper disable once MissingHasOwnPropertyInForeach
+      for (var key in obj) {
+        temp[key] = cloneAsObject(obj[key]);
+      }
+      return temp;
+    }
+
+    navigator.geolocation.getCurrentPosition((pos) => {
+      textareaEl.value = JSON.stringify(cloneAsObject(pos), null, 2);
+    }, (err) => {
+      textareaEl.value = JSON.stringify(err, null, 2);
+    }, {
+      enableHighAccuracy: true,
+      timeout: 5000,
+      maximumAge: 0,
+    });
+  </script>
+</body>
+
+</html>
