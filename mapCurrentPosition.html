@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>getCurrentPosition</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.1.1/css/ol.css">
+  <style>
+    .map {
+      height: 90vh;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="map" class="map"></div>
+
+  <script src="./cloneAsObject.js"></script>
+  <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.1.1/build/ol.js"></script>
+  <script>
+    function initMap(pos) {
+      new ol.Map({
+        target: 'map',
+        layers: [
+          new ol.layer.Tile({
+            source: new ol.source.OSM(),
+          }),
+        ],
+        view: new ol.View({
+          center: ol.proj.fromLonLat([pos.coords.longitude, pos.coords.latitude]),
+          zoom: 16,
+        })
+      })
+    }
+
+    navigator.geolocation.getCurrentPosition((pos) => {
+      initMap(pos);
+    }, (err) => {
+      alert(err);
+    }, {
+      enableHighAccuracy: true,
+      timeout: 5000,
+      maximumAge: 1000,
+    });
+
+  </script>
+</body>
+
+</html>
