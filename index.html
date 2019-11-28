@@ -10,21 +10,10 @@
 
 <body>
   <textarea id="textareaEl" readonly cols="50" rows="20"></textarea>
+  <script src="./cloneAsObject.js"></script>
   <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
   <script>
     const textareaEl = document.querySelector('#textareaEl');
-
-    function cloneAsObject(obj) {
-      if (obj === null || !(obj instanceof Object)) {
-        return obj;
-      }
-      var temp = (obj instanceof Array) ? [] : {};
-      // ReSharper disable once MissingHasOwnPropertyInForeach
-      for (var key in obj) {
-        temp[key] = cloneAsObject(obj[key]);
-      }
-      return temp;
-    }
 
     navigator.geolocation.getCurrentPosition((pos) => {
       textareaEl.value = JSON.stringify(cloneAsObject(pos), null, 2);
@@ -35,17 +24,6 @@
       timeout: 5000,
       maximumAge: 0,
     });
-
-    axios({
-      method: 'get',
-      url: 'list.json',
-    })
-      .then((response) => {
-        console.log(response);
-      })
-      .catch((error) => {
-        console.log(error);
-      });
   </script>
 </body>
 
