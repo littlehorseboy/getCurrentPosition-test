@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>list</title>
+  <style>
+    .storeInfo {
+      border: 1px solid black;
+      margin-bottom: 8px;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app">
+    <h3>地址轉換座標</h3>
+
+    <div>
+      <div v-for="storeInfo in storeInfos" class="storeInfo">
+        <div>
+          店家名稱:
+          {{ storeInfo.name }}
+        </div>
+        <div>
+          地址:
+          {{ storeInfo.address }}
+        </div>
+        <div>
+          緯度:
+          {{ storeInfo.latitude }}
+        </div>
+        <div>
+          經度:
+          {{ storeInfo.longitude }}
+        </div>
+      </div>
+    </div>
+
+    <hr />
+
+    輸入地址
+    <input v-model="address" @change="getCoord" />
+
+    <br />
+    <br />
+
+    轉換座標
+    <textarea v-model="addressCoords" readonly cols="100" rows="25"></textarea>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+  <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+  <script>
+    new Vue({
+      el: '#app',
+      data: {
+        address: '',
+        addressCoords: '',
+        storeInfos: [],
+      },
+      methods: {
+        getCoord() {
+          if (this.address) {
+            axios({
+              method: 'get',
+              url: 'https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/findAddressCandidates',
+              params: {
+                SingleLine: this.address,
+                f: 'json',
+                outSR: '{"wkid":4326}',
+                outFields: 'Addr_type,Match_addr,StAddr,City',
+                maxLocations: 6,
+              },
+            })
+              .then((response) => {
+                this.addressCoords = JSON.stringify(response.data, null, 2);
+              })
+              .catch((error) => {
+                alert(error);
+              });
+          }
+        },
+      },
+      mounted() {
+        axios({
+          method: 'get',
+          url: 'list.json',
+        })
+          .then((response) => {
+            const asyncGetAllCoords = response.data.map((data) => {
+              return new Promise((resolve, reject) => {
+                axios({
+                  method: 'get',
+                  url: 'https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/findAddressCandidates',
+                  params: {
+                    SingleLine: data.address,
+                    f: 'json',
+                    outSR: '{"wkid":4326}',
+                    outFields: 'Addr_type,Match_addr,StAddr,City',
+                    maxLocations: 6,
+                  },
+                })
+                  .then((response) => {
+                    resolve(response);
+                  })
+                  .catch((error) => {
+                    reject(error);
+                  });
+              });
+            });
+
+            Promise.all(asyncGetAllCoords)
+              .then((values) => {
+                this.storeInfos = response.data.map((data, index) => ({
+                  ...data,
+                  latitude: values[index].data.candidates[0].location.y,
+                  longitude: values[index].data.candidates[0].location.x,
+                }));
+              })
+              .catch((error) => {
+                alert(error)
+              });
+
+            this.storeInfos = response.data;
+          })
+          .catch((error) => {
+            alert(error);
+          });
+      }
+    });
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>list</title>
+  <style>
+    .userPosition {
+      margin-bottom: 8px;
+    }
+
+    .storeInfo {
+      border: 1px solid black;
+      margin-bottom: 8px;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app">
+    <div v-if="userPosition.latitude !== 0 && userPosition.longitude !== 0" class="userPosition">
+      使用者座標
+      緯度: {{ userPosition.latitude }}
+      經度: {{ userPosition.longitude }}
+    </div>
+
+    <div>
+      <div v-for="storeInfo in storeInfos" class="storeInfo">
+        <div>
+          店家名稱:
+          {{ storeInfo.name }}
+        </div>
+        <div>
+          地址:
+          {{ storeInfo.address }}
+        </div>
+        <div>
+          緯度:
+          {{ storeInfo.latitude }}
+        </div>
+        <div>
+          經度:
+          {{ storeInfo.longitude }}
+        </div>
+        <div>
+          距離(公里):
+          {{ storeInfo.distance }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="./cloneAsObject.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+  <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@turf/turf@5/turf.min.js"></script>
+  <script>
+    new Vue({
+      el: '#app',
+      data: {
+        userPosition: {
+          latitude: 0,
+          longitude: 0,
+        },
+        storeInfos: [],
+      },
+      mounted() {
+        function asyncGetCurrentPosition() {
+          return new Promise((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition((pos) => {
+              resolve(pos);
+            }, (err) => {
+              reject(err);
+            }, {
+              enableHighAccuracy: true,
+              timeout: 5000,
+              maximumAge: 0,
+            });
+          });
+        }
+
+        function asyncGetStoreInfos() {
+          return new Promise((resolve, reject) => {
+            axios({
+              method: 'get',
+              url: 'list.json',
+            })
+              .then((response) => {
+                resolve(response);
+              })
+              .catch((error) => {
+                reject(err);
+              });
+          });
+        }
+
+        asyncGetCurrentPosition()
+          .then((pos) => {
+            this.userPosition.latitude = pos.coords.latitude;
+            this.userPosition.longitude = pos.coords.longitude;
+
+            return asyncGetStoreInfos();
+          })
+          .then((response) => {
+            this.storeInfos = response.data;
+
+            this.storeInfos = this.storeInfos.map((storeInfo) => ({
+              ...storeInfo,
+              distance: turf.distance(
+                turf.point([this.userPosition.latitude, this.userPosition.longitude]),
+                turf.point([storeInfo.latitude, storeInfo.longitude]),
+                { unit: 'kilometers' },
+              ),
+            }));
+
+            this.storeInfos = this.storeInfos.sort((a, b) => a.distance > b.distance ? 1 : -1);
+          })
+          .catch((err) => {
+            alert(err);
+          })
+          .then((err) => {
+            // always
+          });
+      }
+    });
+  </script>
+</body>
+
+</html>
