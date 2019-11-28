@@ -195,6 +195,9 @@
             btn.addEventListener('click', function () {
               window.open(feature.get('link'), '_blank');
             });
+            btn.addEventListener('touchend', function () {
+              window.open(feature.get('link'), '_blank');
+            });
 
             popupDiv.appendChild(btn);
           } else {
