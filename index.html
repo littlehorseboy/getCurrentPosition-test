@@ -5,26 +5,80 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
-  <title>getCurrentPosition</title>
+  <title>目錄</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+  <link rel="stylesheet" href="https://code.getmdl.io/1.3.0/material.brown-deep_orange.min.css" />
+  <style>
+    .mdl-card {
+      min-height: auto;
+      margin-bottom: 16px;
+    }
+  </style>
 </head>
 
 <body>
-  <textarea id="textareaEl" readonly cols="50" rows="20"></textarea>
-  <script src="./cloneAsObject.js"></script>
-  <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
-  <script>
-    const textareaEl = document.querySelector('#textareaEl');
+  <div class="mdl-card mdl-shadow--2dp">
+    <div class="mdl-card__title">
+      <h2 class="mdl-card__title-text">
+        使用者目前座標
+      </h2>
+    </div>
+    <div class="mdl-card__actions mdl-card--border">
+      <a href="./getCurrentPositionString.html" class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored">
+        查詢使用者座標
+      </a>
+    </div>
+  </div>
+  <div class="mdl-card mdl-shadow--2dp">
+    <div class="mdl-card__title">
+      <h2 class="mdl-card__title-text">
+        地址查座標
+      </h2>
+    </div>
+    <div class="mdl-card__actions mdl-card--border">
+      <a href="./addressToCoords.html" class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored">
+        輸入完整地址來查詢算是有巡邏
+      </a>
+    </div>
+  </div>
+  <div class="mdl-card mdl-shadow--2dp">
+    <div class="mdl-card__title">
+      <h2 class="mdl-card__title-text">
+        計算距離
+      </h2>
+    </div>
+    <div class="mdl-card__actions mdl-card--border">
+      <a href="./listAndCurrentPosition.html" class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored">
+        計算空間資料的續集，並依照距離排序
+      </a>
+    </div>
+  </div>
+  <div class="mdl-card mdl-shadow--2dp">
+    <div class="mdl-card__title">
+      <h2 class="mdl-card__title-text">
+        地圖只有目前位置
+      </h2>
+    </div>
+    <div class="mdl-card__actions mdl-card--border">
+      <a href="./mapCurrentPosition.html" class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored">
+        openlayers 地圖，OSM 底圖，經緯度
+      </a>
+    </div>
+  </div>
+  <div class="mdl-card mdl-shadow--2dp">
+    <div class="mdl-card__title">
+      <h2 class="mdl-card__title-text">
+        地圖各種位置，點擊展開資訊
+      </h2>
+    </div>
+    <div class="mdl-card__actions mdl-card--border">
+      <a href="./mapCurrentPositionAndStorePosition.html" class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored">
+        同上，store、overlap
+      </a>
+    </div>
+  </div>
 
-    navigator.geolocation.getCurrentPosition((pos) => {
-      textareaEl.value = JSON.stringify(cloneAsObject(pos), null, 2);
-    }, (err) => {
-      textareaEl.value = JSON.stringify(err, null, 2);
-    }, {
-      enableHighAccuracy: true,
-      timeout: 5000,
-      maximumAge: 0,
-    });
-  </script>
+  <script defer src="https://code.getmdl.io/1.3.0/material.min.js"></script>
 </body>
 
 </html>
