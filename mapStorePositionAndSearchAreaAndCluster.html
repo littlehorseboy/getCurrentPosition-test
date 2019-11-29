@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>地圖應用，店家，點擊展開資訊及搜尋商圈</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v5.3.0/css/ol.css">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
+
+  <style>
+    .map {
+      height: 100vh;
+    }
+
+    .ol-popup {
+      position: absolute;
+      background-color: white;
+      -webkit-filter: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.2));
+      filter: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.2));
+      padding: 5px;
+      border-radius: 10px;
+      border: 1px solid #cccccc;
+      bottom: 12px;
+      left: -30px;
+      white-space: nowrap;
+      /*min-width: 280px;*/
+    }
+
+    .ol-popup:after,
+    .ol-popup:before {
+      top: 100%;
+      border: solid transparent;
+      content: " ";
+      height: 0;
+      width: 0;
+      position: absolute;
+      pointer-events: none;
+    }
+
+    .ol-popup:after {
+      border-top-color: white;
+      border-width: 10px;
+      left: 28px;
+      margin-left: -10px;
+    }
+
+    .ol-popup:before {
+      border-top-color: #cccccc;
+      border-width: 11px;
+      left: 28px;
+      margin-left: -11px;
+    }
+
+    .ol-popup-closer {
+      text-decoration: none;
+      position: absolute;
+      top: 2px;
+      right: 8px;
+    }
+
+    .ol-popup-closer:after {
+      content: "✖";
+    }
+  </style>
+</head>
+
+<body>
+  <div id="map" class="map">
+    <select id="areaSelect">
+      <option></option>
+    </select>
+  </div>
+
+  <script src="./cloneAsObject.js"></script>
+  <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v5.3.0/build/ol.js"></script>
+  <script src="https://code.jquery.com/jquery-2.2.3.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+  <script>
+    function initMap(pos) {
+      // 設置 icon 圖樣及資料
+      const currentIconFeature = new ol.Feature({
+        geometry: new ol.geom.Point(ol.proj.fromLonLat([pos.coords.longitude, pos.coords.latitude])),
+        name: '目前位置',
+      });
+
+      const currentIconStyle = new ol.style.Style({
+        image: new ol.style.Icon({
+          src: './images/current-marker-icon.png',
+        })
+      });
+
+      currentIconFeature.setStyle(currentIconStyle);
+
+      const vectorLayer = new ol.layer.Vector({
+        source: new ol.source.Vector({
+          features: [currentIconFeature],
+        }),
+      });
+
+      const map = new ol.Map({
+        target: 'map',
+        layers: [
+          new ol.layer.Tile({
+            source: new ol.source.OSM(),
+          }),
+          vectorLayer,
+        ],
+        view: new ol.View({
+          center: ol.proj.fromLonLat([pos.coords.longitude, pos.coords.latitude]),
+          zoom: 14,
+        })
+      });
+
+      // 商圈定位功能
+      axios({
+        method: 'get',
+        url: 'areas.json',
+      })
+        .then((response) => {
+          const areaSelect = document.querySelector('#areaSelect');
+
+          response.data.forEach((obj) => {
+            const option = document.createElement('option');
+            option.value = obj.wkt;
+            option.textContent = obj.area;
+            
+            areaSelect.appendChild(option);
+          })
+
+          areaSelect.addEventListener('change', (event) => {
+            if (event.target.value) {
+              var format = new ol.format.WKT();
+              var feature = format.readFeature(event.target.value);
+              feature.getGeometry().transform('EPSG:4326', 'EPSG:3857');
+      
+              var vector = new ol.layer.Vector({
+                source: new ol.source.Vector({
+                  features: [feature]
+                })
+              });
+
+              var extent = vector.getSource().getExtent();
+      
+              map.getView().fit(extent, map.getSize());
+            }
+          });
+        })
+        .catch((error) => {
+          alert(error);
+        });
+
+      // 各店家打點
+      axios({
+          method: 'get',
+          url: 'list.json',
+        })
+        .then((response) => {
+          const storeFeatures = response.data.map((storeInfo) => {
+            const iconFeature = new ol.Feature({
+              geometry: new ol.geom.Point(ol.proj.fromLonLat([storeInfo.longitude, storeInfo.latitude])),
+              name: storeInfo.name,
+              area: storeInfo.area,
+              address: storeInfo.address,
+              latitude: storeInfo.latitude,
+              longitude: storeInfo.longitude,
+              link: storeInfo.link
+            });
+
+            const iconStyle = new ol.style.Style({
+              image: new ol.style.Icon({
+                src: './images/map-marker-icon.png',
+                scale: 1.1,
+              })
+            });
+
+            iconFeature.setStyle(iconStyle);
+
+            return iconFeature;
+          });
+
+          // const vectorLayer = new ol.layer.Vector({
+          //   source: new ol.source.Vector({
+          //     features: storeFeatures,
+          //   }),
+          // });
+
+          const clusterSource = new ol.source.Cluster({
+            distance: 40,
+            source: new ol.source.Vector({
+              features: storeFeatures,
+            }),
+          });
+
+          var styleCache = {};
+          var clusters = new ol.layer.Vector({
+            source: clusterSource,
+            style: function(feature) {
+              var size = feature.get('features').length;
+
+              var style = styleCache[size];
+              if (!style) {
+                style = new ol.style.Style({
+                  image: new ol.style.Circle({
+                    radius: 15,
+                    stroke: new ol.style.Stroke({
+                      color: '#fff'
+                    }),
+                    fill: new ol.style.Fill({
+                      color: '#3399CC'
+                    })
+                  }),
+                  text: new ol.style.Text({
+                      text: size.toString() + '間',
+                      fill: new ol.style.Fill({
+                          color: '#fff'
+                      })
+                  })
+                });
+                styleCache[size] = style;
+              }
+              return style;
+            }
+          });
+
+          map.addLayer(clusters);
+        })
+        .catch((error) => {
+          alert(error);
+        });
+
+      // Overlay
+      var popupDiv = document.createElement('div');
+      popupDiv.id = 'popup';
+      popupDiv.className = 'ol-popup';
+      popupDiv.style.fontFamily = 'system-ui';
+      popupDiv.style.paddingLeft = '0.6rem';
+      popupDiv.style.paddingRight = '0.6rem';
+      document.getElementById('map').appendChild(popupDiv);
+
+
+      var popup = new ol.Overlay({
+        element: popupDiv,
+        positioning: 'bottom-center',
+        stopEvent: false,
+        offset: [0, -30]
+      });
+      map.addOverlay(popup);
+
+      // display popup on click
+      map.on('click', function (evt) {
+        var feature = map.forEachFeatureAtPixel(evt.pixel, function (feature) {
+          return feature;
+        });
+
+        if (feature) {
+          var coordinates = feature.getGeometry().getCoordinates();
+          popup.setPosition(coordinates);
+          popupDiv.innerHTML = '';
+          if (feature.get('name')) {
+            popupDiv.innerHTML = feature.get('name');
+          } else if (feature.get('features')) {
+            const cfeatures = feature.get('features');
+
+            if (cfeatures.length > 0) {
+              cfeatures.forEach((cfeature) => {
+                if (cfeature.get('link')) {
+                  const storeDiv = document.createElement('div');
+                  storeDiv.innerHTML = `
+                    <div>店名: ${cfeature.get('name')}</div>
+                    <div>區域: ${cfeature.get('area')}</div>
+                    <div>地址: ${cfeature.get('address')}</div>
+                  `;
+                  storeDiv.style.border = '1px solid rgb(208, 210, 92)';
+                  storeDiv.style.marginBottom = '4px';
+                  storeDiv.style.padding = '4px';
+      
+                  var btnDiv = document.createElement('div');
+                  btnDiv.style.textAlign = 'center';
+                  var btn = document.createElement('button');
+                  btn.className = 'btn btn-info btn-sm';
+                  btn.innerHTML = '<span class="oi oi-location" title="前往" aria-hidden="true"></span>前往刮刮樂';
+                  // btn.style.marginLeft = '0.3rem';
+                  // btn.style.marginRight = '0.3rem';
+                  btn.style.marginTop = '8px';
+                  btn.style.padding = '0.15rem 0.3rem';
+                  btn.style.fontSize = '1.6rem';
+                  btn.addEventListener('click', function () {
+                    window.open(cfeature.get('link'), '_blank');
+                  });
+                  btn.addEventListener('touchend', function () {
+                    window.open(cfeature.get('link'), '_blank');
+                  });
+      
+                  btnDiv.append(btn);
+                  storeDiv.append(btnDiv)
+                  popupDiv.appendChild(storeDiv);
+                }
+              });
+            }
+          }
+        } else {
+          popup.setPosition(undefined);
+        }
+      });
+
+      map.on('pointermove', function (e) {
+        if (e.dragging) {
+          $(popupDiv).popover('destroy');
+          return;
+        }
+        var pixel = map.getEventPixel(e.originalEvent);
+        var hit = map.hasFeatureAtPixel(pixel);
+        $('#map').css('cursor', hit ? 'pointer' : '');
+      });
+    }
+
+    navigator.geolocation.getCurrentPosition((pos) => {
+      initMap(pos);
+    }, (err) => {
+      alert(err);
+    }, {
+      enableHighAccuracy: true,
+      timeout: 5000,
+      maximumAge: 1000,
+    });
+  </script>
+</body>
+
+</html>
