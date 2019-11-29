@@ -19,7 +19,29 @@
 </head>
 
 <body>
+  <h3>計算距離</h3>
+
   <div id="app">
+    <div>
+      第一點
+      緯度
+      <input v-model="firstLatitude" @change="measureDistance" />
+      經度
+      <input v-model="firstLongitude" @change="measureDistance" />
+    </div>
+    <div>
+      第二點
+      緯度
+      <input v-model="secondLatitude" @change="measureDistance" />
+      經度
+      <input v-model="secondLongitude" @change="measureDistance" />
+    </div>
+    <div>
+      兩點距離有幾公里 {{ distance }}
+    </div>
+
+    <hr />
+
     <div v-if="userPosition.latitude !== 0 && userPosition.longitude !== 0" class="userPosition">
       使用者座標
       緯度: {{ userPosition.latitude }}
@@ -69,6 +91,23 @@
           longitude: 0,
         },
         storeInfos: [],
+
+        firstLatitude: 24.1483776,
+        firstLongitude: 120.71813119,
+        secondLatitude: 24.1530591,
+        secondLongitude: 0,
+        distance: 0,
+      },
+      methods: {
+        measureDistance() {
+          if (this.firstLatitude && this.firstLongitude && this.secondLatitude && this.secondLongitude) {
+            this.distance = turf.distance(
+              turf.point([this.firstLatitude, this.firstLongitude]),
+              turf.point([this.secondLatitude, this.secondLongitude]),
+              { unit: 'kilometers' },
+            );
+          }
+        },
       },
       mounted() {
         function asyncGetCurrentPosition() {
