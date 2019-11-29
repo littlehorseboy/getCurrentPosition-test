@@ -5,7 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
-  <title>getCurrentPosition</title>
+  <title>地圖應用，店家，點擊展開資訊</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v5.3.0/css/ol.css">
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
 
@@ -185,13 +185,17 @@
               <div>區域: ${feature.get('area')}</div>
               <div>地址: ${feature.get('address')}</div>
             `;
+
+            var btnDiv = document.createElement('div');
+            btnDiv.style.textAlign = 'center';
             var btn = document.createElement('button');
             btn.className = 'btn btn-info btn-sm';
             btn.innerHTML = '<span class="oi oi-location" title="前往" aria-hidden="true"></span>前往刮刮樂';
             // btn.style.marginLeft = '0.3rem';
             // btn.style.marginRight = '0.3rem';
+            btn.style.marginTop = '8px';
             btn.style.padding = '0.15rem 0.3rem';
-            btn.style.fontSize = '0.7rem';
+            btn.style.fontSize = '1.6rem';
             btn.addEventListener('click', function () {
               window.open(feature.get('link'), '_blank');
             });
@@ -199,7 +203,8 @@
               window.open(feature.get('link'), '_blank');
             });
 
-            popupDiv.appendChild(btn);
+            btnDiv.append(btn);
+            popupDiv.appendChild(btnDiv);
           } else {
             popupDiv.innerHTML = feature.get('name');
           }
